@@ -95,34 +95,27 @@ export const cronJobs = {
 };
 
 export async function initCache() {
-	for (const [k, v] of Object.entries(caches)) {
-		await fillCache(k, v.cache, v.key, v.transformer);
-	}
+	if (!cluster.isMaster) return;
 
-	await updatePresenceUsage(true);
-	await updateUserCount(true);
-
-	Object.values(cronJobs).map(j => j.start());
-
-	const mongoStream = pmdDB.watch(
-		[
-			{
-				$replaceRoot: {
-					newRoot: {
-						_id: "$_id",
-						type: "$operationType",
-						data: {
-							$ifNull: ["$fullDocument", "$documentKey"]
-						},
-						db: "$ns.db",
-						coll: "$ns.coll"
-					}
-				}
-			}
-		],
-		{
-			fullDocument: "updateLookup"
-		}
+	await Promise.all(
+		cacheBuilder([
+			"presences",
+			"langFiles",
+			{ name: "credits", expires: 5 * 1000 },
+			"science",
+			"versions",
+			"merch",
+			"ffUpdates",
+			"changelog",
+			"discordUsers",
+			"partners",
+			"sponsors",
+			"jobs",
+			"benefits",
+			"downloads",
+			"alphaUsers",
+			"betaUsers"
+		])
 	);
 	//* updateCache
 	mongoStream.on("change", (data: any) => {
