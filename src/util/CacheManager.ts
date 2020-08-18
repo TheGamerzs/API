@@ -100,11 +100,13 @@ export async function initCache() {
 	await Promise.all(
 		cacheBuilder([
 			"presences",
+			"presenceInfo",
 			"langFiles",
 			{ name: "credits", expires: 5 * 1000 },
 			"science",
 			"versions",
 			"merch",
+			"merchPromotions",
 			"ffUpdates",
 			"changelog",
 			"discordUsers",
@@ -114,7 +116,7 @@ export async function initCache() {
 			"benefits",
 			"downloads",
 			"alphaUsers",
-			"betaUsers"
+			"betaUsers",
 		])
 	);
 	//* updateCache
