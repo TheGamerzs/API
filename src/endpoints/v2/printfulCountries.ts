@@ -10,7 +10,8 @@ const handler: RouteHandlerMethod<
 	unknown
 > = async (req, res) => {
 	await axios.get("https://api.printful.com/countries").then(data => {
-		res.send(data);
+		console.log(data.data.result);
+		res.send(data.data.result);
 	});
 };
 export { handler };
