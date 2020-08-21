@@ -148,12 +148,8 @@
 			"handler": "bugUserInfo"
 		},
 		{
-			"path": "/v2/products",
-			"handler": "products"
-		},
-		{
-			"path": "/v2/currencyRates",
-			"handler": "currencyRates"
+			"path": "/v2/printfulCountries",
+			"handler": "printfulCountries"
 		}
 	]
 }
