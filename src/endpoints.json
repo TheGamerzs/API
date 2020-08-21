@@ -148,8 +148,8 @@
 			"handler": "bugUserInfo"
 		},
 		{
-			"path": "/v2/printfulCountries",
-			"handler": "printfulCountries"
+			"path": "/v2/printful/countries",
+			"handler": "countries"
 		}
 	]
 }
