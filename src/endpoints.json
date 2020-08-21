@@ -148,8 +148,12 @@
 			"handler": "bugUserInfo"
 		},
 		{
+			"path": ["/v2/payment/promo/:code", "/v2/payment/promo/:code/:token"],
+			"handler": "payment/promo"
+		},
+		{
 			"path": "/v2/printful/countries",
-			"handler": "countries"
+			"handler": "printful/countries"
 		}
 	]
 }
