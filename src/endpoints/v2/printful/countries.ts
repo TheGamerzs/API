@@ -1,7 +1,14 @@
-import axios from "axios";
 import { RouteGenericInterface, RouteHandlerMethod } from "fastify/types/route";
 import { IncomingMessage, Server, ServerResponse } from "http";
+import { cache } from "../../../index";
 
+let products = cache.get("merch");
+
+cache.on("update", (_, data) => (products = data), {
+	only: "merch"
+});
+
+//* Request Handler
 const handler: RouteHandlerMethod<
 	Server,
 	IncomingMessage,
@@ -9,9 +16,9 @@ const handler: RouteHandlerMethod<
 	RouteGenericInterface,
 	unknown
 > = async (req, res) => {
-	await axios.get("https://api.printful.com/countries").then(data => {
-		console.log(data.data.result);
-		res.send(data.data.result);
-	});
+	let countries = products.filter(document => document.title === "shipping")[0].countries;
+	return res.send({ countries });
 };
+
+//* Export handler
 export { handler };
