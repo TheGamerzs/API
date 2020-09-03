@@ -29,11 +29,15 @@ const handler: RouteHandlerMethod<
 	}
 
 	promo = await promotions.findOne({
-		code: req.params["code"]
+		code: req.params["code"],
+		userId: null
 	});
 
 	if (userPromo) {
-		if (userPromo.useLimit > 0 && userPromo.expires > Date.now()) {
+		if (
+			(userPromo.useLimit > 0 || userPromo.useLimit == null) &&
+			userPromo.expires > Date.now()
+		) {
 			return res.send(userPromo);
 		} else if (userPromo.useLimit === 0) {
 			return res.send({ string: "checkout.maximumUses" });
@@ -41,7 +45,10 @@ const handler: RouteHandlerMethod<
 			return res.send({ string: "checkout.expiredCode" });
 		}
 	} else if (promo) {
-		if (promo.useLimit > 0 && promo.expires > Date.now()) {
+		if (
+			(promo.useLimit > 0 || promo.useLimit == null) &&
+			promo.expires > Date.now()
+		) {
 			return res.send(promo);
 		} else if (promo.expires <= Date.now()) {
 			return res.send({ string: "checkout.expiredCode" });
