@@ -17,10 +17,12 @@ const handler: RouteHandlerMethod<
 
 	let items = [];
 	for (let id of req.params["id"].split(",")) {
-	items.push(await merch.findOne({
-		item_id: req.params["id"].split("-")[0]
-	}));
-}
+		items.push(
+			await merch.findOne({
+				item_id: id.split("-")[0]
+			})
+		);
+	}
 
 	res.send({ items });
 };
