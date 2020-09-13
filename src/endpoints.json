@@ -156,6 +156,10 @@
 			"handler": "payment/promo"
 		},
 		{
+			"path": "/v2/payment/processTransaction",
+			"handler": "payment/processTransaction"
+		},
+		{
 			"path": "/v2/printful/countries",
 			"handler": "printful/countries"
 		},
