@@ -1,24 +1,29 @@
 import "source-map-support/register";
 
-import fastify from "fastify";
-import gql from "fastify-gql";
-import helmet from "fastify-helmet";
+import fastify, { FastifyServerOptions } from "fastify";
+import { readFileSync } from "fs";
+import gql from "mercurius";
 import middie from "middie";
 
 import { client, connect } from "../../db/client";
 import loadEndpoints from "../functions/loadEndpoints";
 
 export async function worker() {
-	const server = fastify({
+	let options = {
 		logger: process.env.NODE_ENV !== "production",
-		ignoreTrailingSlash: true
-	});
+		disableRequestLogging: true,
+		ignoreTrailingSlash: true,
+		https: {
+			key: readFileSync("../key.key"),
+			cert: readFileSync("../cert.crt")
+		}
+	};
 
-	await Promise.all([
-		connect(),
-		server.register(middie),
-		server.register(helmet)
-	]);
+	if (process.env.NODE_ENV !== "production") delete options.https;
+
+	const server = fastify(options);
+
+	await Promise.all([connect(), server.register(middie)]);
 
 	await server.register(gql, {
 		schema: (await import("../../endpoints/v3/schema/schema")).default
@@ -31,8 +36,7 @@ export async function worker() {
 			"X-Response-Time": process.hrtime(),
 			"Access-Control-Allow-Origin": "*",
 			"Access-Control-Allow-Headers":
-				"Origin, X-Requested-With, Content-Type, Accept",
-			Connection: "close"
+				"Origin, X-Requested-With, Content-Type, Accept"
 		});
 		return;
 	});
@@ -41,12 +45,20 @@ export async function worker() {
 		//@ts-ignore
 		const diff = process.hrtime(req.responseTimeCalc);
 		reply.header("X-Response-Time", diff[0] * 1e3 + diff[1] / 1e6);
+		reply.header("X-Powered-By", "PreMiD");
+		reply.header("Connection", "close");
 		return;
 	});
 
 	server.post("/v3", async (req, reply) =>
 		reply.graphql((req.body as any).query)
 	);
+
+	server.options("/v3", (req, reply) => {
+		reply.status(200);
+		reply.send("Ok");
+		return;
+	});
 
 	loadEndpoints(server, require("../../endpoints.json"));
 	server.listen({ port: 3001 });

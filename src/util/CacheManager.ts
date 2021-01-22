@@ -1,7 +1,7 @@
-import cluster from "cluster";
+import cluster from 'cluster';
 
-import { pmdDB } from "../db/client";
-import { cache } from "../index";
+import { pmdDB } from '../db/client';
+import { cache } from '../index';
 
 let initialCacheI = null;
 export async function initCache() {
@@ -9,24 +9,24 @@ export async function initCache() {
 
 	await Promise.all(
 		cacheBuilder([
-			"presences",
-			"presenceInfo",
-			"langFiles",
-			{ name: "credits", expires: 5 * 1000 },
-			"science",
-			"versions",
-			"merch",
-			"merchPromotions",
-			"ffUpdates",
-			"changelog",
-			"discordUsers",
-			"partners",
-			"sponsors",
-			"jobs",
-			"benefits",
-			"downloads",
-			"alphaUsers",
-			"betaUsers",
+			'presences',
+			'presenceInfo',
+			'langFiles',
+			{ name: 'credits', expires: 5 * 1000 },
+			'science',
+			'versions',
+			'merch',
+			'merchPromotions',
+			'ffUpdates',
+			'changelog',
+			'discordUsers',
+			'partners',
+			'sponsors',
+			'jobs',
+			'benefits',
+			'downloads',
+			'alphaUsers',
+			{ name: 'betaUsers', expires: 5 * 1000 },
 		])
 	);
 
@@ -36,8 +36,8 @@ export async function initCache() {
 function cacheBuilder(
 	cachesToGet: Array<string | { name: string; expires: number }>
 ) {
-	return cachesToGet.map(cTG => {
-		return new Promise(async resolve => {
+	return cachesToGet.map((cTG) => {
+		return new Promise<void>(async (resolve) => {
 			// @ts-ignore
 			if (cache.isExpired(cTG.name || cTG))
 				cache.set(

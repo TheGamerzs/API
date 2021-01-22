@@ -10,19 +10,20 @@ on:
 jobs:
   DePloY:
     strategy:
+      max-parallel: 2
       matrix:
-        host: [1.premid.app]
+        host: [94.130.110.12,94.130.228.224,88.198.92.64,88.198.144.181,78.47.55.214]
     runs-on: "ubuntu-latest"
     steps:
       - name: Deploying...
         uses: appleboy/ssh-action@master
         with:
           host: ${{ matrix.host }}
-          username: ${{ secrets.SSHUSERNAME }}
-          password: ${{ secrets.SSHPASSWORD }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /home/PreMiD/API
+            cd /home/API
             git reset --hard
             git pull
             yarn run init
-            pm2 reload /home/PreMiD/ecosystem.config.js --only API
+            pm2 reload API

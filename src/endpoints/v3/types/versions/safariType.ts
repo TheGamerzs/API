@@ -1,11 +1,10 @@
 import { GraphQLBoolean, GraphQLString } from "graphql";
-
 import { GraphQLObjectType } from "graphql/type/definition";
 
-export const reviewType = new GraphQLObjectType({
-	name: "reviewType",
+export const safariType = new GraphQLObjectType({
+	name: "safariType",
 	fields: () => ({
-		userId: { type: GraphQLString },
-		accepted: { type: GraphQLBoolean }
+		version: { type: GraphQLString },
+		urgent: { type: GraphQLBoolean }
 	})
 });

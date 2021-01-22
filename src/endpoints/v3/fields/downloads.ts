@@ -14,12 +14,13 @@ cache.on("update", (_, data) => (downloadsCache = prepareDownloads(data)), {
 export const downloads = {
 	type: GraphQLList(downloadsType),
 	args: {
-		releaseType: { type: GraphQLString, defaultValue: null }
+		releaseType: { type: GraphQLString, defaultValue: null },
+		token: { type: GraphQLString, defaultValue: null }
 	},
-	async resolve(_, _1, context) {
-		if (context.query?.token) {
+	async resolve(_, args) {
+		if (args.token) {
 			try {
-				const dUser = await getDiscordUser(context.query.token),
+				const dUser = await getDiscordUser(args.token),
 					accessType = cache
 						.get("alphaUsers")
 						.find(aU => aU.userId === dUser.id)
@@ -42,6 +43,7 @@ export const downloads = {
 function prepareDownloads(downloads) {
 	return downloads.map(c => ({
 		releaseType: c.item,
+		enabled: c.enabled,
 		appLinks: c.app_links,
 		extLinks: c.ext_links
 	}));
