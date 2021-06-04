@@ -1,28 +1,22 @@
 import { GraphQLError, GraphQLInt, GraphQLString } from "graphql";
 import { GraphQLList, GraphQLScalarType } from "graphql/type/definition";
 
-import { cache } from "../../../index";
-import { prepareUsage } from "../../v2/presenceUsage";
+import { CacheEventHandler, presences as cache, presenceUsage } from "../../../util/CacheManager";
 import { presenceType } from "../types/presences/presencesType";
 
-let science = cache.get("science"),
-	presencesCache = preparePresences(cache.get("presences"));
+let presencesCache = preparePresences(cache.values());
 
-cache.on("update", (_, data) => (presencesCache = preparePresences(data)), {
-	only: "presences"
-});
-cache.on("update", (_, data) => (science = data), {
-	only: "science"
+CacheEventHandler.on("presences", () => {
+	presencesCache = preparePresences(cache.values());
 });
 
-function preparePresences(cache) {
-	const usage = prepareUsage(science);
+function preparePresences(data) {
+	data = data.map(c => {
+		c.users = presenceUsage[c.metadata.service];
 
-	cache = cache.map(c => {
-		c.users = usage[c.metadata.service];
 		return c;
 	});
-	return cache;
+	return data;
 }
 
 export const presences = {

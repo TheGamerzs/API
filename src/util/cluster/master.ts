@@ -1,11 +1,11 @@
 import "source-map-support/register";
 
-import cluster from "cluster";
-import { cpus } from "os";
+import { connect, pmdDB, rcdDB } from "../../db/client";
+import { cpus, hostname } from "os";
 
-import { client, connect, pmdDB } from "../../db/client";
-import { initCache } from "../CacheManager";
-import debug from "../debug";
+import { IncomingHttpHeaders } from "http2";
+import cluster from "cluster";
+import fs from "fs";
 import initSentry from "../functions/initSentry";
 
 initSentry();
@@ -19,30 +19,43 @@ if (process.env.NODE_ENV !== "production") {
 export let workers: Array<cluster.Worker> = [];
 
 export async function master() {
-	connect()
-		.then(async () => {
-			await initCache();
+	await deleteOldUsers();
+	setInterval(() => deleteOldUsers, 60 * 60 * 1000);
 
-			if (!process.argv.includes("--no-cluster")) spawnWorkers();
+	let requests: loggedRequest[] = [],
+		activeLogging = (
+			await rcdDB
+				.collection("projectSettings")
+				.findOne({ name: "PreMiD" }, { projection: { _id: false } })
+		).settings.requestLogging;
 
-			debug("info", "index.ts", "Listening on port 3001");
+	if (!process.argv.includes("--no-cluster"))
+		for (let i = 0; i < cpus().length; i++) {
+			const worker = cluster.fork();
 
-			deleteOldUsers();
-			setInterval(() => deleteOldUsers, 60 * 60 * 1000);
-		})
-		.catch(err => {
-			debug("error", "index.ts", err);
-			process.exit();
-		});
+			worker.on("message", (message: any) => {
+				if (message.type === "logRequest" && activeLogging)
+					logRequest(requests, message.requestInfo as loggedRequest);
+			});
+
+			workers.push(worker);
+		}
+
+	setInterval(async () => {
+		activeLogging = (
+			await rcdDB
+				.collection("projectSettings")
+				.findOne({ name: "PreMiD" }, { projection: { _id: false } })
+		).settings.requestLogging;
+
+		await saveLoggedRequests(requests);
+
+		requests = [];
+	}, 30 * 60 * 1000);
 }
 
-function spawnWorkers() {
-	for (let i = 0; i < cpus().length; i++) {
-		workers.push(cluster.fork());
-	}
-}
-
-function deleteOldUsers() {
+async function deleteOldUsers() {
+	await connect();
 	//* Delete older ones than 7 days
 	return pmdDB.collection("science").deleteMany({
 		$or: [
@@ -52,17 +65,62 @@ function deleteOldUsers() {
 	});
 }
 
-//? Still needed?
-process.on("SIGINT", async function () {
-	await Promise.all([
-		client.close(),
+/**
+ * Log a request.
+ * @param data loggedRequest
+ */
+export function logRequest(requests: loggedRequest[], data: loggedRequest) {
+	let lR = requests.find((r: loggedRequest) => r.ip === data.ip);
 
-		...workers.map(w => {
-			return new Promise(resolve => {
-				w.once("exit", resolve);
-				if (!w.isDead) w.process.kill("SIGINT");
-			});
-		})
-	]);
-	process.exit(0);
-});
+	if (lR !== undefined) {
+		if (!lR.paths.find((p: string) => p === data.path))
+			lR.paths.push(data.path);
+
+		if (!lR.methods.find(m => m === lR.method)) lR.methods.push(lR.method);
+
+		lR.lastRequest = Date.now();
+		lR.requests++;
+
+		return;
+	} else {
+		data.paths = [data.path];
+		data.requests = 1;
+		data.methods = [data.method];
+
+		return requests.push(data as loggedRequest);
+	}
+}
+
+/**
+ * Export logged requests to a JSON file.
+ * @param loggedRequests loggedRequest[]
+ */
+async function saveLoggedRequests(loggedRequests: loggedRequest[]) {
+	if (!fs.existsSync("../logs")) fs.mkdirSync("../logs");
+
+	let sorted = loggedRequests
+		.filter((lR: loggedRequest) => lR.requests !== undefined)
+		.sort((a: loggedRequest, b: loggedRequest) => b.requests - a.requests)
+		.slice(0, 50);
+
+	await rcdDB
+		.collection("logs")
+		.insertOne({ logs: sorted, savedOn: Date.now(), server: hostname() })
+		.then(() =>
+			console.log(`[${new Date(Date.now())}] - API Requests logs saved.`)
+		)
+		.catch(console.log);
+
+	return;
+}
+
+interface loggedRequest {
+	ip: string | string[];
+	headers: IncomingHttpHeaders;
+	path: string;
+	paths?: string[];
+	requests?: number;
+	method: string;
+	methods?: string[];
+	lastRequest?: number;
+}
