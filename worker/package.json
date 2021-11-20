@@ -17,7 +17,7 @@
 		"apollo-server-fastify": "^3.4.0",
 		"axios": "^0.23.0",
 		"fastify": "^3.22.0",
-		"graphql": "^15.6.1",
+		"graphql": "^15.7.2",
 		"ioredis": "^4.28.0",
 		"lodash": "^4.17.21",
 		"mongodb": "^4.1.3",
