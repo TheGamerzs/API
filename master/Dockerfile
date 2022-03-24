@@ -1,4 +1,4 @@
-FROM node:current-alpine
+FROM node:17.8-alpine3.15
 
 COPY package.json package.json
 RUN yarn
@@ -6,7 +6,7 @@ RUN yarn
 COPY . .
 RUN yarn build
 
-FROM node:current-alpine
+FROM node:17.8-alpine3.15
 
 WORKDIR /app
 
