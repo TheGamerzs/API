@@ -1,4 +1,4 @@
-FROM node:16.11.0
+FROM node:lts
 
 COPY package.json package.json
 RUN yarn
@@ -6,7 +6,7 @@ RUN yarn
 COPY . .
 RUN yarn build
 
-FROM node:16.11.0
+FROM node:lts
 
 WORKDIR /app
 
